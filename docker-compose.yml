@@ -1,0 +1,20 @@
+version: '3.1'
+
+services:
+  stringdb:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: stringdb
+      POSTGRES_PASSWORD: stringdb
+      PGDATA: /var/lib/postgres/data/pgdata
+    volumes:
+      - ./pgdata:/var/lib/postgres/data/pgdata
+      - ./shared:/opt/shared
+      - ./logs:/opt/logs
+    networks:
+      - stringdb-net
+
+networks:
+  stringdb-net:
+    external: true
