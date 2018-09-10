@@ -67,7 +67,7 @@ if __name__ == '__main__':
         output_counts_path = sys.argv[3]
 
         if source == 'stringdb':
-            conn = stringdb.connect()
+            conn = stringdb.connect_to_docker()
             cursor = conn.cursor()
 
             count_annotations = lambda go: \

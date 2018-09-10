@@ -3,6 +3,7 @@
 set -e
 
 script_dir="$(dirname "$0")"
+stringdb_dir="$script_dir/.."
 
 source "$script_dir/python3.6.5.venv/bin/activate"
 
@@ -39,18 +40,19 @@ docker-compose exec -T stringdb \
             go_new_id text
         );"
 
-docker-compose exec -T stringdb                         \
-    psql stringdb stringdb -c                           \
+docker-compose exec -T stringdb                                                                         \
+    psql stringdb stringdb -c                                                                           \
     "\\copy (
         select
           distinct(go_id)
         from
           mapping.tmp_gene_ontology
     ) to STDOUT with csv delimiter E'\\t';
-    " |                                                 \
-    python "$script_dir/go_tools.py" alternatives - - |       \
-    docker-compose exec -T stringdb                     \
-        psql stringdb stringdb -c                       \
+    " |                                                                                                 \
+    PYTHONPATH="$stringdb_dir/../semantic_similarity:$stringdb_dir/../geneontology/scripts:$PYTHONPATH" \
+        python "$script_dir/go_tools.py" alternatives - - |                                             \
+    docker-compose exec -T stringdb                                                                     \
+        psql stringdb stringdb -c                                                                       \
         "\\copy mapping.gene_ontology_update from STDIN delimiter E'\\t' csv;"
 
 
