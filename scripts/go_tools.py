@@ -1,3 +1,4 @@
+from os import path
 import csv
 import itertools
 import networkx as nx
@@ -10,7 +11,11 @@ import semantic_similarity
 
 
 def get_curated_frequencies_path():
-    return '/data/pinaweb/stringdb/extra/go_curated_frequencies.tab'
+    script_dir = path.dirname(path.realpath(__file__))
+    stringdb_dir = path.dirname(script_dir)
+
+    # '/data/pinaweb/stringdb/extra/go_curated_frequencies.tab'
+    return path.join(stringdb_dir, 'extra', 'go_curated_frequencies.tab')
 
 def load_go_list(fd):
     return [go_id.strip() for go_id in fd.readlines() if not go_id.isspace()]

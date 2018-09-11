@@ -10,6 +10,10 @@ def connect_to_localhost():
     import psycopg2
     return psycopg2.connect(host='localhost', port=5432, user='stringdb', password='stringdb', dbname='stringdb')
 
+def connect_through_docker_network():
+    import psycopg2
+    return psycopg2.connect(host='stringdb', port=5432, user='stringdb', password='stringdb', dbname='stringdb')
+
 def connect_to_docker():
     import psycopg2
     import docker
