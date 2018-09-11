@@ -49,7 +49,7 @@ def get_explicit_annotations(cursor, go_id, evidence_codes):
     return [string_id for string_id, in cursor.fetchall()]
 
 def count_annotations(cursor, go_is_a_g, go_id, evidence_codes):
-    gos = tuple(nx.descendants(go_is_a_g, go_id)) + (go_id,)
+    gos = tuple(nx.ancestors(go_is_a_g, go_id)) + (go_id,)
 
     cursor.execute("""
         select
