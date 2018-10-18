@@ -37,6 +37,26 @@ def connect_to_docker():
     return psycopg2.connect(host=host, port=5432, user=env['POSTGRES_USER'], password=env['POSTGRES_PASSWORD'], dbname='stringdb')
 
 
+def get_species_network_scores(cursor, species_id, score_type):
+    cursor.execute("""
+        select
+          evidence_scores[i][2] evidence_score
+        from (
+          select
+            evidence_scores,
+            generate_subscripts(evidence_scores, 1) as i
+          from
+            network.node_node_links
+          where
+            node_type_b = %(species_id)s
+        ) as indexed_scores
+        where
+          evidence_scores[i][1] = %(score_type)s;
+        """,
+        {'species_id': species_id, 'score_type': score_type})
+
+    return [score for score, in cursor.fetchall()]
+
 def get_explicit_annotations(cursor, go_id, evidence_codes):
     cursor.execute("""
         select
@@ -73,7 +93,7 @@ def count_annotations(cursor, go_is_a_g, go_id, evidence_codes):
 def get_explicit_prot_annotations(cursor, prot_string_id, evidence_codes):
     cursor.execute("""
         select
-          go_id
+          distinct go_id
         from
           mapping.gene_ontology
         where
@@ -100,7 +120,7 @@ def get_species_names(cursor):
           species_id,
           official_name
         from
-          items.species
+          items.species;
         """)
 
     return cursor.fetchall()
@@ -112,7 +132,7 @@ def get_species_prots(cursor, species_id):
         from
           items.proteins
         where
-          species_id = %(species_id)s
+          species_id = %(species_id)s;
         """,
         {'species_id': species_id})
 
