@@ -7,7 +7,7 @@ import sys
 
 import stringdb
 import geneontology as godb
-import semantic_similarity
+import semantic_similarity as semsim
 
 
 def get_curated_frequencies_path():
@@ -20,6 +20,19 @@ def get_curated_frequencies_path():
 def load_go_list(fd):
     return [go_id.strip() for go_id in fd.readlines() if not go_id.isspace()]
 
+
+def init_default_hrss(agg = semsim.agg_bma_max):
+    go_onto = godb.load_go_obo()
+    go_is_a_g = godb.onto_rel_graph(go_onto)
+    ic = semsim.init_ic(get_curated_frequencies_path())
+
+    return semsim.HRSS(agg=agg, onto=go_onto, rel_g=go_is_a_g, ic=ic)
+
+def init_default_ic_dist(agg = semsim.agg_bma_min):
+    onto = godb.load_go_obo()
+    ic = semsim.init_ic(get_curated_frequencies_path())
+
+    return semsim.ICDist(agg=agg, onto=onto, ic=ic)
 
 
 def open_arg_file(path, mode):
@@ -118,9 +131,9 @@ if __name__ == '__main__':
 
                     print(f'found {unannotated_cnt} unannotated proteins', file=sys.stderr)
 
-        ic = semantic_similarity.init_ic(get_curated_frequencies_path())
-        pair_dissim = lambda go1,  go2:  semantic_similarity.get_mica_dissim(go_is_a_g, ic, go1, go2)
-        agg_dissim  = lambda gos1, gos2: semantic_similarity.agg_bma_min(dissim, gos1, gos2)
+        ic = semsim.init_ic(get_curated_frequencies_path())
+        pair_dissim = lambda go1,  go2:  semsim.get_mica_dissim(go_is_a_g, ic, go1, go2)
+        agg_dissim  = lambda gos1, gos2: semsim.agg_bma_min(dissim, gos1, gos2)
         dissim      = lambda gos1, gos2: min(ns_wise_comparisons(go_onto, agg_dissim, gos1, gos2))
 
         dissim_mat = np.zeros((len(annotations), len(annotations)))
