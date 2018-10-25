@@ -60,7 +60,7 @@ def get_species_network_scores(cursor, species_id, score_type):
 def get_explicit_annotations(cursor, go_id, evidence_codes):
     cursor.execute("""
         select
-          string_id
+          distinct string_id
         from
           mapping.gene_ontology
         where
