@@ -5,7 +5,7 @@ set -e
 script_dir="$(dirname "$0")"
 stringdb_dir="$script_dir/.."
 
-source "$script_dir/python3.6.5.venv/bin/activate"
+# source "$script_dir/python3.6.5.venv/bin/activate"
 
 # Create tmp_gene_ontology from all_go_knowledge_explicit
 
@@ -107,5 +107,3 @@ docker-compose exec -T stringdb \
           brin (species_id)
         with
           (pages_per_range = 128);"
-
-deactivate

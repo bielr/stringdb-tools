@@ -43,13 +43,13 @@ docker-compose exec -T stringdb \
     on
       homology.blast_data
     using
-      brin protein_id_a
+      brin (protein_id_a)
     with (pages_per_range=128);
 
     create index si_blast_data_protein_id_b
     on
       homology.blast_data
     using
-      brin protein_id_b
+      brin (protein_id_b)
     with (pages_per_range=128);
     "

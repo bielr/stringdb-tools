@@ -21,10 +21,10 @@ def connect_to_docker():
     docker_client = docker.from_env()
 
     containers = docker_client.containers.list(
-        filters = {'label': [
-            'com.docker.compose.project=stringdb',
-            'com.docker.compose.service=stringdb'
-        ]})
+        filters = {
+            'status': 'running',
+            'label': ['com.docker.compose.service=stringdb']
+        })
 
     assert len(containers) == 1
 
