@@ -88,7 +88,7 @@ def make_annotation_counter(source, go_is_a_g, evidence_codes):
 def get_curated_frequencies(source, go_is_a_g, evidence_codes):
     count_annotations = make_annotation_counter(source, go_is_a_g, evidence_codes)
 
-    for i, go in enumerate(go_is_a_g.nodes()):
+    for i, go in enumerate(sorted(go_is_a_g.nodes())):
         go_cnt = count_annotations(go)
 
         print(f'{i}/{nx.number_of_nodes(go_is_a_g)} count {go} = {go_cnt}', file=sys.stderr)
@@ -207,7 +207,7 @@ if __name__ == '__main__':
         source = sys.argv[2]
         output_path = sys.argv[3]
 
-        freqs = get_curated_frequencies(source, go_onto, go_is_a_g, evidence_codes)
+        freqs = get_curated_frequencies(source, go_is_a_g, evidence_codes)
 
         writer = csv.writer(open_arg_file(output_path, 'w+'), delimiter='\t')
         writer.writerows(freqs)
@@ -243,3 +243,6 @@ if __name__ == '__main__':
 
         print('writing results...', file=sys.stderr)
         write_annotation_comparison_matrices(annotations, mats, open_arg_file(output_path, 'w+'))
+
+    else:
+        print('unknown command:', cmd, file=sys.stderr)
