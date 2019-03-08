@@ -2,19 +2,20 @@ import csv
 import itertools
 import networkx as nx
 #import obonet
+import pandas as pd
 import pronto
 import sys
 
 
-def connect_to_localhost():
+def connect_to_localhost(*, dbname='stringdb', user='stringdb'):
     import psycopg2
-    return psycopg2.connect(host='localhost', port=5432, user='stringdb', password='stringdb', dbname='stringdb')
+    return psycopg2.connect(host='localhost', port=5432, user=user, password='stringdb', dbname=dbname)
 
-def connect_through_docker_network():
+def connect_through_docker_network(*, dbname='stringdb', user='stringdb'):
     import psycopg2
-    return psycopg2.connect(host='stringdb', port=5432, user='stringdb', password='stringdb', dbname='stringdb')
+    return psycopg2.connect(host='stringdb', port=5432, user=user, password='stringdb', dbname=dbname)
 
-def connect_to_docker():
+def connect_to_docker(*, dbname='stringdb', project='stringdb', service='stringdb'):
     import psycopg2
     import docker
 
@@ -23,7 +24,10 @@ def connect_to_docker():
     containers = docker_client.containers.list(
         filters = {
             'status': 'running',
-            'label': ['com.docker.compose.service=stringdb']
+            'label': [
+                f'com.docker.compose.service={service}',
+                f'com.docker.compose.project={project}'
+            ]
         })
 
     assert len(containers) == 1
@@ -34,8 +38,29 @@ def connect_to_docker():
     host = network_settings['Networks']['stringdb-net']['IPAddress']
     env = dict(e.split('=', 1) for e in container.attrs['Config']['Env'])
 
-    return psycopg2.connect(host=host, port=5432, user=env['POSTGRES_USER'], password=env['POSTGRES_PASSWORD'], dbname='stringdb')
+    return psycopg2.connect(host=host, port=5432, user=env['POSTGRES_USER'], password=env['POSTGRES_PASSWORD'], dbname=dbname)
 
+
+
+def get_prots_external_ids(cursor, string_ids):
+    if string_ids:
+        cursor.execute("""
+            select
+              protein_id,
+              protein_external_id
+            from
+              items.proteins
+            where
+              protein_id in %(string_ids)s;
+            """,
+            {'string_ids': tuple(string_ids)})
+
+        records = cursor.fetchall()
+
+    else:
+        records = []
+
+    return pd.DataFrame(records, columns=['string_id', 'external_id'])
 
 def get_species_network_scores(cursor, species_id, score_type):
     cursor.execute("""
