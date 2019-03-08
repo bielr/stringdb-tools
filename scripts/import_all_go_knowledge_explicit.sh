@@ -7,7 +7,7 @@ stringdb_dir="$script_dir/.."
 
 # source "$script_dir/python3.6.5.venv/bin/activate"
 
-# Create tmp_gene_ontology from all_go_knowledge_explicit
+echo "Creating tmp_gene_ontology from all_go_knowledge_explicit"
 
 docker-compose exec -T stringdb \
     psql -1 stringdb stringdb -c "
@@ -24,14 +24,14 @@ docker-compose exec -T stringdb \
             confidence_score smallint not null
         );"
 
-wget "https://string-db.org/mapping_files/gene_ontology_mappings/all_go_knowledge_explicit.tsv.gz" -O- --tries=0 | \
+wget "https://version-10-5.string-db.org/mapping_files/gene_ontology_mappings/all_go_knowledge_explicit.tsv.gz" -O- --tries=0 | \
     gzip -d |                                                                                                      \
     docker-compose exec -T stringdb                                                                                \
         psql -1 stringdb stringdb -c                                                                               \
         "\\copy mapping.tmp_gene_ontology from STDIN delimiter E'\\t' csv;"
 
 
-# Create gene_ontology_update from go_tools.py (alternatives) of distinct go_id's in tmp_gene_ontology
+echo "Creating gene_ontology_update from go_tools.py (alternatives) of distinct go_id's in tmp_gene_ontology"
 
 docker-compose exec -T stringdb \
     psql stringdb stringdb -c "
@@ -56,7 +56,7 @@ docker-compose exec -T stringdb                                                 
         "\\copy mapping.gene_ontology_update from STDIN delimiter E'\\t' csv;"
 
 
-# Merge tmp_gene_ontology and gene_ontology_update, then create indices
+echo "Merging tmp_gene_ontology and gene_ontology_update"
 
 docker-compose exec -T stringdb \
     psql -1 stringdb stringdb -c "
@@ -88,8 +88,12 @@ docker-compose exec -T stringdb \
             tmp.species_id, prots.protein_id, upd.go_new_id;
 
         drop table mapping.tmp_gene_ontology;
-        drop table mapping.gene_ontology_update;
+        drop table mapping.gene_ontology_update;"
 
+echo "Creating indices"
+
+docker-compose exec -T stringdb \
+    psql -1 stringdb stringdb -c "
         create index
           si_gene_ontology_string_id
         on

@@ -17,7 +17,7 @@ docker-compose exec -T stringdb \
             confidence_score smallint not null
         );"
 
-wget "https://string-db.org/mapping_files/gene_ontology_mappings/all_go_knowledge_full.tsv.gz" -O- --tries=0 | \
+wget "https://version-10-5.string-db.org/mapping_files/gene_ontology_mappings/all_go_knowledge_full.tsv.gz" -O- --tries=0 | \
     gzip -d |                                                                                                      \
     docker-compose exec -T stringdb                                                                                \
         psql -1 stringdb stringdb -c                                                                               \

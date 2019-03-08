@@ -15,7 +15,7 @@ docker-compose exec -T stringdb \
             bit_score   real     not null
         );"
 
-wget "https://string-db.org/mapping_files/uniprot_mappings/full_uniprot_2_string.04_2015.tsv.gz" -O- --tries=0 | \
+wget 'https://version-10-5.string-db.org/mapping_files/uniprot_mappings/full_uniprot_2_string.04_2015.tsv.gz' -O- --tries=0 | \
     gzip -d |                                                                             \
     tail -n +2 |                                                                          \
     sed -e 's/|/\t/' |                                                                    \

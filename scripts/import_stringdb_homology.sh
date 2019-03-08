@@ -1,10 +1,18 @@
 #!/bin/zsh
 
+
 script_dir="$(dirname "$0")"
 
-wget https://stringdb-static.org/download/homology_schema.v10.5.sql.gz -O- --tries=0 | \
-    gzip -d | \
-    "$script_dir/import_stringdb.sh" -
+until
+    wget https://version-10-5.string-db.org/download/homology_schema.v10.5.sql.gz -O- --tries=0 |
+        gzip -d |
+        "$script_dir/import_stringdb.sh" -
+do
+    echo "initial homology import failed, retrying"
+done
+
+
+echo "modifying homology.blast_data"
 
 docker-compose exec -T stringdb \
     psql stringdb stringdb -c "
@@ -16,9 +24,15 @@ docker-compose exec -T stringdb \
       drop start_b,
       drop end_b,
       drop size_b;
+      "
 
+docker-compose exec -T stringdb \
+    psql stringdb stringdb -c "
     vacuum homology.blast_data;
+    "
 
+docker-compose exec -T stringdb \
+    psql stringdb stringdb -c "
     alter table homology.blast_data
       add column species_id_a integer;
 
@@ -29,9 +43,17 @@ docker-compose exec -T stringdb \
       items.proteins
     where
       protein_id = protein_id_a;
+    "
 
+docker-compose exec -T stringdb \
+    psql stringdb stringdb -c "
     vacuum homology.blast_data;
+    "
 
+echo "creating indices for homology.blast_data"
+
+docker-compose exec -T stringdb \
+    psql stringdb stringdb -c "
     create index si_blast_data_species
     on
       homology.blast_data
