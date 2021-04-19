@@ -138,7 +138,7 @@ def get_all_virus_host_interactions(cursor, host_species_id, score_types):
             columns=['node_type_a', 'node_type_b', 'node_id_a', 'node_id_b', 'score_type', 'evidence_score'])
 
 
-def get_viruses_for_host(cursor, host_species_id, score_types):
+def get_viruses_for_host(cursor, host_species_id):
     cursor.execute("""
         select distinct(node_type_a) node_type from
           network.node_node_links
@@ -265,7 +265,7 @@ def network_with_external_ids(cursor, network):
 
 
 def get_species_official_names(cursor, species_ids=None):
-    if species_id is None:
+    if species_ids is None:
         cursor.execute("""
             select
               species_id, official_name

@@ -2,9 +2,13 @@ library(rlang)
 library(igraph)
 library(tidyverse)
 
-load_g = function(filename_noext) {
+load_g = function(filename_noext, swissprot_only=TRUE) {
     g_path = sprintf('shared/dump/%s.tab', filename_noext)
-    edges = read_tsv(g_path, col_names=TRUE)
+    edges = read_tsv(g_path, col_names=c('protein1', 'protein2', 'evidence_score'), skip=1)
+
+    if (swissprot_only) {
+        edges = filter_swissprot(edges)
+    }
 
     cat("score quantiles:\n")
     quantiles = edges$evidence_score %>% quantile(probs = seq(0, 100, 5)/100)
@@ -15,6 +19,43 @@ load_g = function(filename_noext) {
         select(-evidence_score) %>%
         graph_from_data_frame(directed=FALSE) %>%
         igraph::simplify()
+}
+
+load_gs = function(filenames_noext, swissprot_only=FALSE) {
+    do.call(graph.union, map(filenames_noext, ~load_g(., swissprot_only)))
+}
+
+load_fgs = function(filepath, swissprot_only=TRUE) {
+    edges = read_tsv(filepath, col_names=TRUE) %>%
+        filter(protein1 <= protein2)
+
+    if (swissprot_only) {
+        edges = filter_swissprot(edges)
+    }
+
+    gs = edges %>%
+        gather(namespace, weight, biological_process, molecular_function, cellular_component, na.rm=TRUE) %>%
+        filter(weight > 0) %>%
+        nest(-namespace, .key=edges) %>%
+        mutate(quants    = map(edges, ~quantile(.$weight, probs = seq(0, 100, 5)/100)),
+               graph     = map(edges, ~graph_from_data_frame(., directed=FALSE)),
+               connected = map_lgl(edges, is_connected))
+
+    print(gs %>% select(namespace, quants) %>% deframe)
+
+    gs
+}
+
+deframe_ns = function(df, ...) {
+    df %>% select(namespace, ...) %>% deframe
+}
+
+filter_swissprot = function(edges) {
+    string_swissprot = read_tsv('shared/dump/string_id-swissprot-list.tab', col_names=TRUE)
+
+    edges %>%
+        inner_join(string_swissprot, by=c(protein1='string_id')) %>%
+        inner_join(string_swissprot, by=c(protein2='string_id'))
 }
 
 analyze_g = function(g) {
@@ -49,16 +90,18 @@ analyze_g = function(g) {
     art = articulation_points(big_g)
     cat("# articulation points:", length(art), "\n")
 
-    ecc_art = eccentricity(big_g, art)
+    if (length(art) > 0) {
+        ecc_art = eccentricity(big_g, art)
 
-    cat("eccentricity table", "\n")
-    print(table(ecc_art))
+        cat("eccentricity table", "\n")
+        print(table(ecc_art))
 
-    min_ecc = min(ecc_art)
+        min_ecc = min(ecc_art)
 
-    for (min_ecc_node in names(ecc_art)[ecc_art == min_ecc]) {
-        cat("components removing", min_ecc_node, "\n")
-        print(components(delete_vertices(big_g, min_ecc_node))$csize)
+        for (min_ecc_node in names(ecc_art)[ecc_art == min_ecc]) {
+            cat("components removing", min_ecc_node, "\n")
+            print(components(delete_vertices(big_g, min_ecc_node))$csize)
+        }
     }
 
     list(big_comp_g=big_g, stats=res)
@@ -110,14 +153,14 @@ get_mcl_clusters = function(big_comp) {
     process_mcl_clusters(big_comp, mcl)
 }
 
-process_fastgreedy_clusters = function(big_comp, fg) {
-    cluster_names = sort(unique(membership(fg)))
-    clusters = lapply(cluster_names, function(cluster_id) V(big_comp)[membership(fg) == cluster_id])
+process_fastgreedy_clusters = function(big_comp, fastgreedy) {
+    cluster_names = sort(unique(membership(fastgreedy)))
+    clusters = lapply(cluster_names, function(cluster_id) V(big_comp)[membership(fastgreedy) == cluster_id])
     names(clusters) = cluster_names
 
-    list(fg = fg,
+    list(fastgreedy = fastgreedy,
          clusters = clusters,
-         membership = membership(fg))
+         membership = membership(fastgreedy))
 }
 
 get_fastgreedy_clusters = function(big_comp) {
